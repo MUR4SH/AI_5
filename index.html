@@ -1,0 +1,114 @@
+<style>
+.sinus{
+    display: block;
+    width: auto;    
+    height: auto;    
+    max-height: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10vw;
+}
+.db_text{
+    width: 212px;
+    text-align: center;
+}
+#table_sinus{
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+}
+.sinus_row > span{
+    display: block;
+    width: 60px;
+    min-width: 30px;
+    height: 20px;
+    padding: 5px;
+    border: 1px solid black;
+    overflow: hidden;
+    white-space: nowrap; /* Don't forget this one */
+    text-overflow: ellipsis;
+}
+.sinus_row{
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    width: max-content;
+}
+#db_input{
+    border: 1px solid black;
+    margin-top: 10px;
+    width: 212px;
+}
+</style>
+<body>
+    <div class='sinus'>
+        <span class='db_text'>1. Insert number - get sinus</span>
+        <input id='db_input' type='text' oninput='verify(this)'/>
+        <input type='button' value='Initiate' onclick='send()'/>
+        <div id='table_sinus'></div> 
+    </div>
+</body>
+<script>
+    const offset = 2;
+
+    f = (arg) => Math.sin(arg) //Синус вычисляется по радианам
+    rad = (arg) => (arg*Math.PI)/180  //Перевод из градусов в радианы - есть погрешность
+
+    function sinus_table_init(){
+        let sinus_top = ''
+        let sinus_bottom = ''
+        let i = 0
+        
+        while(i<12){
+            let v = f(rad(i*15 + offset*15))
+            sinus_top += `<span class='sinus_index' ${i==11?`id='sinus_index_changed' onclick='toggle(this)'>`:`>${i}`}</span>`
+            sinus_bottom += `<span class='sinus_value' ${i==11?`id='sinus_value_changed' onclick='toggle(this)'>`:`title='${v}'>${v.toFixed(5)}`}</span>`
+            i++
+        }
+
+        document.getElementById('table_sinus').innerHTML = `<div class='sinus_row'>${sinus_top}</div><div class='sinus_row'>${sinus_bottom}</div>`;
+    }
+
+    function fill_table(text, arg){
+        let fn = f(rad(Number(text)*15 + offset*15))
+        document.getElementById('sinus_index_changed').innerText = fn;
+        document.getElementById('sinus_index_changed').setAttribute('title', text)
+        document.getElementById('sinus_value_changed').innerText = arg;
+        document.getElementById('sinus_value_changed').setAttribute('title', text)
+    }
+
+    function toggle(elem){
+        if(elem.getAttribute('style') != 'width: auto !important;'){
+            elem.style = 'width: auto !important;'
+        }else{
+            elem.style = null
+        }
+    }
+
+    function verify(elem){
+        let text = elem.value
+        if(text != Number(text)){
+           elem.style = 'border: 2px solid red;'
+        }else{
+            elem.style = 'border: 1px solid black;'
+        }
+    }
+
+    async function send(){
+        let text = document.getElementById('db_input').value
+        if(text != Number(text)){
+            return
+        }
+        console.log(text)
+        let r = await fetch(`http://127.0.0.1:8080/getsinus?index=${encodeURI(Number(text)+2)}`)
+        let resp = await r.json()
+        console.log(resp.res)
+        if(resp){
+            fill_table(text, resp.res)
+        }else{
+            fill_table(null, null)
+        }
+    }
+
+    sinus_table_init()
+</script>

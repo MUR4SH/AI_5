@@ -1,15 +1,33 @@
 {
-  "name": "ai_5",
+  "name": "ai_3",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "http": "^0.0.1-security",
+    "js-levenshtein": "^1.1.6",
+    "node-static": "^0.7.11",
+    "string-similarity": "^4.0.4",
+    "url": "^0.11.0"
+  },
   "scripts": {
-    "start": "node index.js",
+    "start": "electron .",
+    "build": "electron-packager . myApp --platform=win32 --arch=x64 --app-version=0.1.0 --out=dist --ignore=dist --prune",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MUR4SH/AI_5.git"
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@tensorflow/tfjs": "^3.11.0"
+  "bugs": {
+    "url": "https://github.com/MUR4SH/AI_5/issues"
+  },
+  "homepage": "https://github.com/MUR4SH/AI_5#readme",
+  "devDependencies": {
+    "@tensorflow/tfjs": "^3.11.0",
+    "electron": "^15.3.1"
   }
 }

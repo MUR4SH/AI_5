@@ -1,47 +1,57 @@
-const tf = require('@tensorflow/tfjs')
+const { app, BrowserWindow } = require('electron')
+const server_http = require("http");
+const url = require('url');
+const mdl = require('./module.js')
+const fs = require('fs');
+let html
 
-f = (arg) => Math.sin(arg) //Синус вычисляется по радианам
-rad = (arg) => (arg*3.14)/180  //Перевод из градусов в радианы - есть погрешность
-
-// Build and compile model.
-const mlModel = tf.sequential();
-mlModel.add(tf.layers.dense({units: 1, inputShape: [1]}));
-mlModel.compile({optimizer: 'sgd', loss: 'meanSquaredError'});
-
-let xs, ys
-
-init = (n)=>{
-    let i = 0
-    let arr_1 = []
-    let arr_2 = []
-    let train_arr = [0, 0.259, 0.5, 0.707, 0.866, 0.966, 1, 0.966, 0.866, 0.707, 0.5, 0.259, 0, -0.259, -0.5, -0.707, -0.866, -0.966, -1, -0.966, -0.866, -0.707, -0.5, -0.259, 0, 0.259]
-    // Generate some synthetic data for training.
-    // 0.707 0.866 0.966 1 0.966 0.866 0.707 0.5 0.259 0 – 0.259
-    // Шаг 15 градусов
-    while(i < n) {
-        let k = rad(15*i)
-        arr_1.push([i])
-        arr_2.push([train_arr[i]])
-        i++
+server_http.createServer(async function(req, res){
+    res.statusCode = 404;
+    if(req.method == "GET"){
+        let url_s = (req.url).replace('/127.0.0.1:8080','')
+        console.log(url_s)
+        if(url_s == '/'){
+            res.statusCode = 200;
+            html = fs.readFileSync('./index.html','utf-8')
+            res.setHeader('Content-type', 'text/html');
+            res.write(html)
+        }else if(url_s.match(/^\/getsinus/)){
+            let urlRequest = url.parse(req.url, true);                
+            res.statusCode = 200;
+            res.setHeader('Content-type', 'text/json');
+            let a = await mdl.execute_sinus(decodeURI(urlRequest.query.index),18)
+            res.write(JSON.stringify({res: a}))
+        }
+        res.end();
     }
-    xs = tf.tensor2d(arr_1, [n, 1]);
-    ys = tf.tensor2d(arr_2, [n, 1]);
+}).listen('8080',()=>{
+    console.log('SERVER http://127.0.0.1'+':'+'8080');
+});
 
-    console.log(arr_1)
-    console.log(arr_2)
-    ys.print()
-    xs.print()
+function createWindow () {
+    const win = new BrowserWindow({
+      width: 1000,
+      height: 1000,
+      webPreferences: {
+        nodeIntegration: true,
+        enableRemoteModule: true,
+      }
+    })
+  
+    win.loadFile('index.html')
+    win.setResizable(false);
 }
 
-init(18) //24 раза по 15 = 360 + 25 раз, считаем с нуля
-function train_execute(k){
-    // Train model with fit().
-    mlModel.fit(xs, ys, {epochs: 2000}).then(()=>{
-        mlModel.predict(tf.tensor2d([[k]], [1, 1])).array().then((r)=>{
-            console.log(r)
-            console.log(`real = ${f(rad(k*15))}, predicted = ${r[0]}`)
-        })
-    });
-}
-
-train_execute(1)
+app.whenReady().then(createWindow)
+  
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+})
+  
+app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow()
+    }
+})
