@@ -19,7 +19,19 @@ server_http.createServer(async function(req, res){
             let urlRequest = url.parse(req.url, true);                
             res.statusCode = 200;
             res.setHeader('Content-type', 'text/json');
-            let a = await mdl.execute_sinus(decodeURI(urlRequest.query.index),18)
+            let a = await mdl.execute_sinus(decodeURI(urlRequest.query.index))
+            res.write(JSON.stringify({res: a}))
+        }else if(url_s.match(/^\/getradian/)){
+            let urlRequest = url.parse(req.url, true);                
+            res.statusCode = 200;
+            res.setHeader('Content-type', 'text/json');
+            let a = await mdl.execute_radian(decodeURI(urlRequest.query.degree))
+            res.write(JSON.stringify({res: a}))
+        }else if(url_s.match(/^\/getnumber/)){
+            let urlRequest = url.parse(req.url, true);                
+            res.statusCode = 200;
+            res.setHeader('Content-type', 'text/json');
+            let a = await mdl.execute_matrix(decodeURI(urlRequest.query.matrix))
             res.write(JSON.stringify({res: a}))
         }
         res.end();

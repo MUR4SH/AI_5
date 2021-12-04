@@ -1,40 +1,46 @@
 const tf = require('@tensorflow/tfjs')
+const mtx = require('./matrix.json')
 
-f = (arg) => Math.sin(arg) //Синус вычисляется по радианам
-rad = (arg) => (arg*Math.PI)/180  //Перевод из градусов в радианы - есть погрешность
+f = (arg) => Number(Math.sin(arg).toFixed(2)) //Синус вычисляется по радианам
+rad = (arg) => ((arg)*Math.PI)/180  //Перевод из градусов в радианы - есть погрешность
+const train_arr = [0, 0.259, 0.5, 0.707, 0.866, 0.966, 1, 0.966, 0.866, 0.707, 0.5, 0.259, 0, -0.259, -0.5, -0.707, -0.866, -0.966, -1, -0.966, -0.866, -0.707, -0.5, -0.259, 0]
 
 // Build and compile model.
-const mlModel = tf.sequential();
+const mlModel_sinus = tf.sequential({
+    layers: [tf.layers.dense({ units: 1, inputShape: 1 }), tf.layers.dense({ units: 10, inputShape: 10 }), tf.layers.dense({ units: 1, inputShape: 1 })],
+  });
+mlModel_sinus.compile({optimizer: 'sgd', loss: 'meanSquaredError'});
 
-let xs, ys
+const mlModel_rad = tf.sequential({
+    layers: [tf.layers.dense({ units: 1, inputShape: 1 }), tf.layers.dense({ units: 10, inputShape: 10 }), tf.layers.dense({ units: 1, inputShape: 1 })],
+  });
+mlModel_rad.compile({optimizer: 'sgd', loss: 'meanSquaredError'});
+
+const mlModel_number = tf.sequential({
+    layers: [tf.layers.dense({ units: 1, inputShape: 1 }), tf.layers.dense({ units: 10, inputShape: 10 }), tf.layers.dense({ units: 1, inputShape: 1 })],
+  });
+mlModel_number.compile({optimizer: 'sgd', loss: 'meanSquaredError'});
 
 module.exports = {
-    init_sinus: (n) => {
-        //24 раза по 15 = 360 + 25 раз, считаем с нуля
-        let i = 0
-        let arr_1 = []
-        let arr_2 = []
-        let train_arr = [0, 0.259, 0.5, 0.707, 0.866, 0.966, 1, 0.966, 0.866, 0.707, 0.5, 0.259, 0, -0.259, -0.5, -0.707, -0.866, -0.966, -1, -0.966, -0.866, -0.707, -0.5, -0.259, 0, 0.259]
-        // Generate some synthetic data for training.
-        // 0.707 0.866 0.966 1 0.966 0.866 0.707 0.5 0.259 0 – 0.259
-        // Шаг 15 градусов
-        while(i < n) {
-            arr_1.push([i])
-            arr_2.push([f(rad(Number(i)*15))])
-            i++
-        }
-        xs = tf.tensor2d(arr_1, [n, 1]);
-        ys = tf.tensor2d(arr_2, [n, 1]);
+    execute_sinus: async (k, param = 17) => {
+        k = Number(k)
+        await mlModel_sinus.loadWeights('file://./models/model_sin')
+        let r = await mlModel_sinus.predict(tf.tensor2d([[k]], [1, 1])).array()
+        console.log(`real=${train_arr[k%25]} predicted = ${r[0]}`)
+        return r[0]
     },
-    execute_sinus: async (k, param = 52) => {
-        module.exports.init_sinus(param) 
-
-        mlModel.add(tf.layers.dense({units: 1, inputShape: [1]}));
-        mlModel.compile({optimizer: 'sgd', loss: 'meanSquaredError'});
-        // Train model with fit().
-        await mlModel.fit(xs, ys, {epochs: 10000})
-        let r = await mlModel.predict(tf.tensor2d([[Number(k)]], [1, 1])).array()
-        console.log(`real = ${f(rad(Number(k)*15))}, predicted = ${r[0]}`)
+    execute_radian: async (k, param = 17) => {
+        k = Number(k)
+        await mlModel_rad.loadWeights('file://./models/model_rad')
+        let r = await mlModel_rad.predict(tf.tensor2d([[k]], [1, 1])).array()
+        console.log(`predicted = ${r[0]}`)
+        return r[0]
+    },
+    execute_matrix: async (k, param = 17) => {
+        k = Number(k)
+        await mlModel_number.loadWeights('file://./models/model_number')
+        let r = await mlModel_number.predict(tf.tensor2d([[k]], [1, 1])).array()
+        console.log(`predicted = ${r[0]}`)
         return r[0]
     }
 }

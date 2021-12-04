@@ -1,9 +1,10 @@
 {
-  "name": "ai_3",
+  "name": "ai_5",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@tensorflow/tfjs-node": "^3.11.0",
     "fs": "^0.0.1-security",
     "http": "^0.0.1-security",
     "js-levenshtein": "^1.1.6",
@@ -13,6 +14,7 @@
   },
   "scripts": {
     "start": "electron .",
+    "train": "node teach.js",
     "build": "electron-packager . myApp --platform=win32 --arch=x64 --app-version=0.1.0 --out=dist --ignore=dist --prune",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

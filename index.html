@@ -1,5 +1,5 @@
 <style>
-.sinus{
+.sinus, .matrix_to_number, .degree_to_radian{
     display: block;
     width: auto;    
     height: auto;    
@@ -8,6 +8,7 @@
     margin-right: auto;
     margin-top: 10vw;
 }
+
 .db_text{
     width: 212px;
     text-align: center;
@@ -41,18 +42,35 @@
 }
 </style>
 <body>
+    <div class='matrix_to_number'>
+        <span class='db_text'>1. Нарисуйте цифру - получите цифру</span>
+        <div id='number_matrix'></div>
+        <input type='button' value='Initiate' onclick='send_matrix()'/>
+        <div>Результат: <span id='number_result'></span></div>
+    </div>
+    <div class='degree_to_radian'>
+        <span class='db_text'>2. Преобразуем градусы в радианы</span>
+        <input id='degeree_input' placeholder='Введите градусы' type='text' oninput='verify_number(this)'/>
+        <input type='button' value='Initiate' onclick='send_degree()'/>
+        <div>Результат вычисленный: <span id='radian_result_calc'></span></div>
+        <div>Результат ии: <span id='radian_result'></span></div>
+    </div>
     <div class='sinus'>
-        <span class='db_text'>1. Insert number - get sinus</span>
-        <input id='db_input' type='text' oninput='verify(this)'/>
-        <input type='button' value='Initiate' onclick='send()'/>
+        <span class='db_text'>3. Дополняем таблицу синусов (таблица сдвинута на 30 градусов)</span>
+        <input id='db_input' type='text' placeholder='Введите число - позиция таблицы' oninput='verify_number(this)'/>
+        <input type='button' value='Initiate' onclick='send_sinus()'/>
         <div id='table_sinus'></div> 
     </div>
 </body>
 <script>
     const offset = 2;
+    const timeout =60;
+    const matrix = [7, 5]
+    const train_arr = [0, 0.259, 0.5, 0.707, 0.866, 0.966, 1, 0.966, 0.866, 0.707, 0.5, 0.259, 0, -0.259, -0.5, -0.707, -0.866, -0.966, -1, -0.966, -0.866, -0.707, -0.5, -0.259, 0, 0.259]
+    let ro;
 
-    f = (arg) => Math.sin(arg) //Синус вычисляется по радианам
-    rad = (arg) => (arg*Math.PI)/180  //Перевод из градусов в радианы - есть погрешность
+    f = (arg) => Number(Math.sin(arg).toFixed(3)) //Синус вычисляется по радианам
+    rad = (arg) => ((arg)*Math.PI)/180  //Перевод из градусов в радианы - есть погрешность
 
     function sinus_table_init(){
         let sinus_top = ''
@@ -60,7 +78,7 @@
         let i = 0
         
         while(i<12){
-            let v = f(rad(i*15 + offset*15))
+            let v = train_arr[(i+offset)%train_arr.length]
             sinus_top += `<span class='sinus_index' ${i==11?`id='sinus_index_changed' onclick='toggle(this)'>`:`>${i}`}</span>`
             sinus_bottom += `<span class='sinus_value' ${i==11?`id='sinus_value_changed' onclick='toggle(this)'>`:`title='${v}'>${v.toFixed(5)}`}</span>`
             i++
@@ -70,7 +88,7 @@
     }
 
     function fill_table(text, arg){
-        let fn = f(rad(Number(text)*15 + offset*15))
+        let fn = f(rad((Number(text)+offset)*15)) // train_arr[(Number(text)+offset)%train_arr.length]
         document.getElementById('sinus_index_changed').innerText = fn;
         document.getElementById('sinus_index_changed').setAttribute('title', text)
         document.getElementById('sinus_value_changed').innerText = arg;
@@ -85,7 +103,7 @@
         }
     }
 
-    function verify(elem){
+    function verify_number(elem){
         let text = elem.value
         if(text != Number(text)){
            elem.style = 'border: 2px solid red;'
@@ -94,21 +112,83 @@
         }
     }
 
-    async function send(){
+    function loading(selector){
+        return
+        let e = document.getElementById(selector)
+        e.innerText = 'loading'
+        let i = 0
+        setInterval(()=>{
+            if(!e.innerText.match(/loading/g)){
+                return
+            }
+            if(i == timeout){
+                e.innerText = 'error'
+                return
+            } 
+            i%10==2?e.innerText += '.': e.innerText = 'loading';
+            i++
+        }, 1000)
+    }
+
+    async function send_sinus(){
         let text = document.getElementById('db_input').value
         if(text != Number(text)){
             return
         }
-        console.log(text)
+        loading('sinus_value_changed')
         let r = await fetch(`http://127.0.0.1:8080/getsinus?index=${encodeURI(Number(text)+2)}`)
         let resp = await r.json()
-        console.log(resp.res)
-        if(resp){
-            fill_table(text, resp.res)
-        }else{
-            fill_table(null, null)
-        }
+        fill_table(text, resp.res)
     }
 
+    async function send_matrix(){
+        let s = ''
+        for(let i=0; i<matrix[0]+matrix[1]; i++){
+            s += String(Number(document.getElementById(`matrix_${i}`).selected))
+        }
+        loading('number_result')
+        let r = await fetch(`http://127.0.0.1:8080/getnumber?matrix=${encodeURI(s)}`)
+        let resp = await r.json()
+        number_result(resp.res)
+    }
+
+    async function send_degree(){
+        ro = document.getElementById('degeree_input').value
+        let s = ro
+        if(s != Number(s)){
+            return
+        }
+        loading('radian_result')
+        let r = await fetch(`http://127.0.0.1:8080/getradian?degree=${encodeURI(s)}`)
+        let resp = await r.json()
+        radian_result(resp.res)
+    }
+
+    function number_result(text){
+        document.getElementById('number_result').innerText = text
+    }
+
+    function radian_result(text){
+        document.getElementById('radian_result').innerText = text
+        document.getElementById('radian_result_calc').innerText = rad(Number(ro))
+    }
+
+    function generate_number_table(arg){
+        let n = matrix[0]
+        let k = matrix[1]
+        let c=0;
+        let arr = ''
+        for(let i=0; i<n; i++){
+            arr += `<div class='num_matrix_row'>`
+            for(let j=0; j<k; j++){
+                arr += `<input id='matrix_${c}' type='checkbox'/>`
+                c++;
+            }
+            arr += `</div>`
+        }
+        document.getElementById('number_matrix').innerHTML = arr
+    } 
+
+    generate_number_table(matrix)
     sinus_table_init()
 </script>
