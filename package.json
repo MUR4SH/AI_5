@@ -5,11 +5,13 @@
   "main": "index.js",
   "dependencies": {
     "@tensorflow/tfjs-node": "^3.11.0",
+    "@tensorflow/tfjs-node-gpu": "^3.11.0",
     "fs": "^0.0.1-security",
     "http": "^0.0.1-security",
     "js-levenshtein": "^1.1.6",
     "node-static": "^0.7.11",
     "string-similarity": "^4.0.4",
+    "tfjs-node-save": "^0.0.2",
     "url": "^0.11.0"
   },
   "scripts": {
@@ -30,6 +32,6 @@
   "homepage": "https://github.com/MUR4SH/AI_5#readme",
   "devDependencies": {
     "@tensorflow/tfjs": "^3.11.0",
-    "electron": "^15.3.1"
+    "electron": "^16.0.4"
   }
 }

@@ -31,7 +31,7 @@ server_http.createServer(async function(req, res){
             let urlRequest = url.parse(req.url, true);                
             res.statusCode = 200;
             res.setHeader('Content-type', 'text/json');
-            let a = await mdl.execute_matrix(decodeURI(urlRequest.query.matrix))
+            let a = await mdl.execute_matrix(JSON.parse(decodeURI(urlRequest.query.matrix)))
             res.write(JSON.stringify({res: a}))
         }
         res.end();

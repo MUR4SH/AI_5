@@ -46,6 +46,7 @@
         <span class='db_text'>1. Нарисуйте цифру - получите цифру</span>
         <div id='number_matrix'></div>
         <input type='button' value='Initiate' onclick='send_matrix()'/>
+        <input type='button' value='Reset' onclick='reset()'/>
         <div>Результат: <span id='number_result'></span></div>
     </div>
     <div class='degree_to_radian'>
@@ -63,7 +64,7 @@
     </div>
 </body>
 <script>
-    const offset = 2;
+    const offset = 3;
     const timeout =60;
     const matrix = [7, 5]
     const train_arr = [0, 0.259, 0.5, 0.707, 0.866, 0.966, 1, 0.966, 0.866, 0.707, 0.5, 0.259, 0, -0.259, -0.5, -0.707, -0.866, -0.966, -1, -0.966, -0.866, -0.707, -0.5, -0.259, 0, 0.259]
@@ -136,18 +137,24 @@
             return
         }
         loading('sinus_value_changed')
-        let r = await fetch(`http://127.0.0.1:8080/getsinus?index=${encodeURI(Number(text)+2)}`)
+        let r = await fetch(`http://127.0.0.1:8080/getsinus?index=${encodeURI(Number(text)+offset)}`)
         let resp = await r.json()
         fill_table(text, resp.res)
     }
 
+    function reset(){
+        for(let i=0; i<matrix[0]*matrix[1]; i++){
+            document.getElementById(`matrix_${i}`).checked = false
+        }
+    }
+
     async function send_matrix(){
-        let s = ''
-        for(let i=0; i<matrix[0]+matrix[1]; i++){
-            s += String(Number(document.getElementById(`matrix_${i}`).selected))
+        let s = []
+        for(let i=0; i<matrix[0]*matrix[1]; i++){
+            s.push(Number(document.getElementById(`matrix_${i}`).checked))
         }
         loading('number_result')
-        let r = await fetch(`http://127.0.0.1:8080/getnumber?matrix=${encodeURI(s)}`)
+        let r = await fetch(`http://127.0.0.1:8080/getnumber?matrix=${encodeURI(JSON.stringify(s))}`)
         let resp = await r.json()
         number_result(resp.res)
     }

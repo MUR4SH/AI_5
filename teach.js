@@ -1,4 +1,5 @@
-const tf = require('@tensorflow/tfjs-node')
+const tf = require('@tensorflow/tfjs')
+require('@tensorflow/tfjs-node')
 const mtx = require('./matrix.json')
 
 f = (arg) => Number(Math.sin(arg).toFixed(3)) //Синус вычисляется по радианам
@@ -12,9 +13,9 @@ let sn = false
 const size = 32
 
 let mlModel = tf.sequential();
-mlModel.add(tf.layers.dense({ units: 1, inputShape: [1], outputShape: [size] }));
-mlModel.add(tf.layers.dense({ units: size, inputShape: [size], outputShape: [size] }));
-mlModel.add(tf.layers.dense({ units: 1, inputShape: [size], outputShape: [1] }));
+mlModel.add(tf.layers.dense({units: 40, inputShape:[35], activation: "tanh"}));
+mlModel.add(tf.layers.dense({units: 256, activation: "tanh"}));
+mlModel.add(tf.layers.dense({units: 1}));
 
 /*
 radian - Adam optimizer, meanSquaredError loss, metrics - MSE
@@ -24,7 +25,7 @@ number - Adam optimizer, meanSquaredError loss, metrics - MSE
 let xs, ys
 
 function arr_str(arr) {
-    let str = ''
+    let str = '1'
     arr.forEach(el => {
         str+=el
     });
@@ -57,7 +58,7 @@ function arr_str(arr) {
         console.log('\nInitiate learning\n')
         // Train model with fit().
         await mlModel.fit(xs, ys, {
-            batchSize: Math.pow(2,6),
+            batchSize: Math.pow(2,10),
             epochs: epoch,
         })
         console.log('\nLearning completed\n')
@@ -65,11 +66,14 @@ function arr_str(arr) {
     execute_sinus = async (k) => {
         k = Number(k)
         let r = await mlModel.predict(tf.tensor([k])).array()
-        console.log(`real=${train_arr[k%train_arr.length]} predicted = ${Number(r[0]).toFixed(3)}`)
+        console.log(`real=${train_arr[k%train_arr.length].toFixed(2)} predicted = ${Number(r[0]).toFixed(2)}`)
         if(r[0] != Number(r[0])){
             return false
         }
-        if(train_arr[k%train_arr.length] == Number(r[0]).toFixed(3)){
+        if(Number(r[0]).toFixed(2) == -0){
+            r[0] = 0
+        }
+        if(train_arr[k%train_arr.length].toFixed(2) == Number(r[0]).toFixed(2)){
             return true
         }
     }
@@ -115,22 +119,23 @@ function arr_str(arr) {
         let arr_2 = []
 
         while(i < n) {
-            let s = Number((Math.random()*1000).toFixed(2))
-            arr_1.push([arr_str(mtx[i].matrix)])
-            arr_2.push([mtx[i].value])
+            let s = i%10//Math.floor(Math.random()*10)
+            let x = mtx[s].matrix
+            arr_1.push(x)
+            arr_2.push(mtx[s].value)
             i++
         }
-        xs = tf.tensor2d(arr_1, [n, 1]);
-        ys = tf.tensor2d(arr_2, [n, 1]);
+
+        xs = tf.tensor(arr_1);
+        ys = tf.tensor(arr_2);
     }
-    execute_matrix = async (k, param = mtx.length) => {
+    execute_matrix = async (k) => {
         k = Number(k)
         // Train model with fit().
-        await mlModel.fit(xs, ys, {epochs: 2000})
-        let r = await mlModel.predict(tf.tensor2d([[k]], [1, 1])).array()
-        console.log(`predicted = ${r[0]}`)
-        if(mtx[5].val == r[0]){
-            mlModel.save('file://./models/model_number')
+        let r = await mlModel.predict(tf.tensor([mtx[k].matrix])).array()
+        console.log(`real = ${mtx[k].value} predicted = ${r[0]}`)
+        if(mtx[k].value == Math.round(r[0])){
+            return true
         }
     }
 
@@ -141,36 +146,52 @@ function final() {
     console.log(`Matrix training - ${mt?'success':'failed'}`)
 }
 
-async function teach(){
+async function teach(num){
     await mlModel.compile({
         loss: tf.losses.meanSquaredError,
         optimizer: 'Adam',
         metrics: [tf.metrics.MSE]
     });
+    if(num == 0){
+        await init_sinus(train_arr.length*2)
+        await train(20000)
+        let b1 = await execute_sinus(0);
+        let b2 = await execute_sinus(1);
+        let b3 = await execute_sinus(3);
+        if(b1 && b2 && b3){
+            sn = true
+            mlModel.save('file://./models/model_sin')
+        }
+    }else if(num == 1){
+        await init_radian(1440) 
+        await train(500)
+        //await load_radian()
+        let b4 = await execute_radian(90)
+        let b5 = await execute_radian(90)
+        let b6 = await execute_radian(-90)
+        if(b4 && b5 && b6){
+            rd = true
+            mlModel.save('file://./models/model_rad')
+        }
+    }else if(num == 2){
+        await init_matrix(10)
+        await train(1000)
+        let b7 = await execute_matrix(0)
+        b7 &= await execute_matrix(1)
+        b7 &= await execute_matrix(2)
+        b7 &= await execute_matrix(3)
+        b7 &= await execute_matrix(4)
+        b7 &= await execute_matrix(5)
+        b7 &= await execute_matrix(6)
+        b7 &= await execute_matrix(7)
+        b7 &= await execute_matrix(8)
+        b7 &= await execute_matrix(9)
 
-    await init_sinus(train_arr.length*10)
-    await train(1000)
-    let b1 = await execute_sinus(0);
-    let b2 = await execute_sinus(1);
-    let b3 = await execute_sinus(8);
-    if(b1 && b2 && b3){
-        sn = true
-        mlModel.save('file://./models/model_sin')
+        if(b7){
+            mt = true
+            mlModel.save('file://./models/model_number')
+        }
     }
-
-    // // await init_radian(1440) 
-    // // await train(500)
-    // await load_radian()
-    // let b4 = await execute_radian(0)
-    // let b5 = await execute_radian(90)
-    // let b6 = await execute_radian(-90)
-    // if(b4 && b5 && b6){
-    //     rd = true
-    //     mlModel.save('file://./models/model_rad')
-    // }
-    // await init_matrix()
-    // await execute_matrix(arr_str(mtx[5].matrix))
-
     final()
 }
 
